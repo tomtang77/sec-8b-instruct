@@ -39,7 +39,7 @@
 
 3. **安裝依賴**
    ```bash
-   pip install torch transformers
+   pip install -r requirements.txt
    ```
 
 4. **設置Hugging Face Token**
