@@ -3,23 +3,35 @@ import torch
 import re
 import os
 
-# export Huggfing Face token to HF_TOKEN
-HF_TOKEN = os.getenv("HF_TOKEN")
+# 導入模型配置
+from model_config import get_model_config, print_model_info
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print("device:", DEVICE)
 
-MODEL_ID = "fdtn-ai/Foundation-Sec-8B-Instruct" # To be relaced with the final model name
+# 獲取模型配置
+MODEL_PATH, NEED_TOKEN, HF_TOKEN = get_model_config()
+print_model_info()
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, token=HF_TOKEN)
-model = AutoModelForCausalLM.from_pretrained(
-    pretrained_model_name_or_path=MODEL_ID,
-    device_map="auto",
-    torch_dtype=torch.bfloat16, # this model's tensor_type is BF16
-    token=HF_TOKEN,
-)
+# 根據配置載入模型和tokenizer
+if NEED_TOKEN:
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, token=HF_TOKEN)
+    model = AutoModelForCausalLM.from_pretrained(
+        pretrained_model_name_or_path=MODEL_PATH,
+        device_map="auto",
+        torch_dtype=torch.bfloat16, # this model's tensor_type is BF16
+        token=HF_TOKEN,
+    )
+else:
+    print("📂 使用本地模型，不需要HF_TOKEN")
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+    model = AutoModelForCausalLM.from_pretrained(
+        pretrained_model_name_or_path=MODEL_PATH,
+        device_map="auto",
+        torch_dtype=torch.bfloat16, # this model's tensor_type is BF16
+    )
 
 generation_args = {
     "max_new_tokens": 1024,
@@ -31,7 +43,7 @@ generation_args = {
     "pad_token_id": tokenizer.pad_token_id,
 }
 
-SYSTEM_PROMPT = "You are a cybersecurity expert."
+SYSTEM_PROMPT = "你是一位專業的網路安全專家。請務必使用繁體中文回答所有問題，提供專業、詳細且實用的網路安全建議和解決方案。"
 
 def inference(prompt):
     messages = [
